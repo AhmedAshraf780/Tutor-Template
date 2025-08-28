@@ -12,6 +12,10 @@ import {
   FormField,
   FormMessage,
 } from "@/components/ui/form";
+import { authService } from "@/services/auth";
+import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 const egyptPhoneRegex = /^(011|010|012|015)\d{8}$/;
 
@@ -43,16 +47,39 @@ export default function Signup() {
     reset,
   } = useForm({ resolver: zodResolver(schema) });
 
+  const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+
   async function onSubmit(values) {
-    // simulate submit
-    await new Promise((r) => setTimeout(r, 600));
-    console.log("Signup values:", values);
-    reset();
-    showToast({
-      title: "Signed up successfully",
-      description: "Welcome aboard!",
-      variant: "success",
-    });
+    try {
+      // simulate submit
+      await new Promise((r) => setTimeout(r, 200));
+      console.log("Signup values:", values);
+
+      reset();
+
+      const res = await authService.sendOTPTOEmail(values);
+
+      if (res.success) {
+        showToast({
+          title: res.message,
+          description: "Welcome aboard!",
+          variant: "success",
+        });
+
+        navigate(`/auth/verifyotp?id=${res.sessionId}`);
+      } else {
+        showToast({
+          title: res.message,
+          variant: "failure",
+        });
+      }
+    } catch (err) {
+      showToast({
+        title: "Something went wrong",
+        variant: "failure",
+      });
+    }
   }
 
   return (
@@ -65,11 +92,11 @@ export default function Signup() {
           <p className="mt-2 text-gray-600">Join and start learning today.</p>
         </div>
 
-        <Form
+        <form
           onSubmit={handleSubmit(onSubmit)}
           className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm"
         >
-          <FormField>
+          <FormField className="mb-4">
             <Label htmlFor="name">Name</Label>
             <Input
               id="name"
@@ -79,7 +106,7 @@ export default function Signup() {
             <FormMessage>{errors.name?.message}</FormMessage>
           </FormField>
 
-          <FormField>
+          <FormField className="mb-4">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
@@ -90,18 +117,27 @@ export default function Signup() {
             <FormMessage>{errors.email?.message}</FormMessage>
           </FormField>
 
-          <FormField>
+          <FormField className="mb-4">
             <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              {...register("password")}
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                {...register("password")}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
             <FormMessage>{errors.password?.message}</FormMessage>
           </FormField>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-4">
             <FormField>
               <Label htmlFor="age">Age</Label>
               <Input
@@ -130,7 +166,7 @@ export default function Signup() {
             </FormField>
           </div>
 
-          <FormField>
+          <FormField className="mb-4">
             <Label htmlFor="address">Address</Label>
             <Input
               id="address"
@@ -140,7 +176,7 @@ export default function Signup() {
             <FormMessage>{errors.address?.message}</FormMessage>
           </FormField>
 
-          <FormField>
+          <FormField className="mb-4">
             <Label htmlFor="phone">Phone (Egypt)</Label>
             <Input
               id="phone"
@@ -150,7 +186,7 @@ export default function Signup() {
             <FormMessage>{errors.phone?.message}</FormMessage>
           </FormField>
 
-          <FormField>
+          <FormField className="mb-4">
             <Label htmlFor="place">Place</Label>
             <Select id="place" defaultValue="" {...register("place")}>
               <option value="" disabled>
@@ -171,7 +207,7 @@ export default function Signup() {
               {isSubmitting ? "Submitting..." : "Sign up"}
             </Button>
           </div>
-        </Form>
+        </form>
         <div className="mt-6 text-center text-sm text-gray-600">
           Already have an account?{" "}
           <a

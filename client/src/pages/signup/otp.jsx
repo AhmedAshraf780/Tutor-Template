@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast.jsx";
@@ -7,13 +7,43 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { authService } from "@/services/auth";
 
 export default function OtpVerify() {
   const [otp, setOtp] = useState("");
   const { showToast } = useToast();
+  const [searchparams] = useSearchParams();
+  const sessionId = searchparams.get("id");
+  const navigate = useNavigate();
 
-  function onSubmit(e) {
+  useEffect(() => {
+    if (!sessionId) {
+      navigate("/signup");
+    }
+  }, [navigate]);
+
+  async function handleResend(e) {
     e.preventDefault();
+    const res = await authService.resendOTP(sessionId);
+    if (res.success) {
+      showToast({
+        title: "Resend Code",
+        description: "code resent successfully",
+        variant: "success",
+      });
+    } else {
+      showToast({
+        title: "Resend Code",
+        description: res.message,
+        variant: "error",
+      });
+    }
+  }
+
+  async function onSubmit(e) {
+    e.preventDefault();
+
     if (otp.length !== 6) {
       showToast({
         title: "Invalid code",
@@ -22,11 +52,31 @@ export default function OtpVerify() {
       });
       return;
     }
-    showToast({
-      title: "Verified",
-      description: "OTP accepted",
-      variant: "success",
-    });
+
+    try {
+      const res = await authService.verfiyOTP(sessionId, otp);
+
+      if (res.success) {
+        showToast({
+          title: "Verified",
+          description: "OTP accepted",
+          variant: "success",
+        });
+        navigate("/signin");
+      } else {
+        showToast({
+          title: "Not valid OTP",
+          description: "OTP Rejected",
+          variant: "error",
+        });
+      }
+    } catch (err) {
+      showToast({
+        title: "Error",
+        description: `Something went wrong, please try again., ${err}`,
+        variant: "error",
+      });
+    }
   }
 
   return (
@@ -77,9 +127,7 @@ export default function OtpVerify() {
             Didn’t get a code?{" "}
             <button
               type="button"
-              onClick={() =>
-                showToast({ title: "Code resent", variant: "success" })
-              }
+              onClick={handleResend}
               className="font-medium text-blue-600 hover:text-blue-700"
             >
               Resend

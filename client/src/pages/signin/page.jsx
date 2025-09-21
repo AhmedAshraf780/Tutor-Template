@@ -34,14 +34,15 @@ export default function Signin() {
       if (res.success) {
         showToast({
           title: "Signed in",
-          description: "Welcome back!",
+          description: res.message,
           variant: "success",
         });
+
 
         if (res.user.isAdmin) {
           navigate("/dashboard");
         } else {
-          navigate(`/students`);
+          navigate(`/students/${res.user.id}`);
         }
       } else {
         showToast({

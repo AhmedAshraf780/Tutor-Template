@@ -10,16 +10,16 @@ import rateLimit from "express-rate-limit";
  *    Custom modules
  * */
 import { config } from "./config/config.js";
-import authRoutes from "./routes/auth/route.js";
-import studentRoutes from "./routes/studentRoutes/route.js";
+import authRoutes from "./routes/auth.routes.js";
+import studentRoutes from "./routes/student.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 import connectMongo from "./utils/connectDB.js";
 import { connectRedis, getRedisClient } from "./utils/connectRedis.js";
 
 /*
  *     Connecting databases
  * */
-await connectMongo();
-await connectRedis();
+
 const redisClient = getRedisClient();
 const loginRate = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -60,8 +60,11 @@ app.use(
 );
 
 app.use("/", authRoutes);
-app.use("/students", studentRoutes);
+app.use("/student", studentRoutes);
+app.use("/admin", adminRoutes);
 
-app.listen(config.PORT, () => {
+app.listen(config.PORT, async () => {
   console.log(`listening on port ${config.PORT}`); // Fixed typo in "listenning"
+  await connectMongo();
+  await connectRedis();
 });

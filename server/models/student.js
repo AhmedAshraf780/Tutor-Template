@@ -23,10 +23,7 @@ const studentSchema = new mongoose.Schema({
   grade: Number,
   address: String,
 
-  group: {
-    type: mongoose.SchemaTypes.ObjectId,
-    ref: "Group",
-  },
+  inGroup: Boolean,
 
   homeworks: [
     {

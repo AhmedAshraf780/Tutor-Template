@@ -1,11 +1,9 @@
 import { config } from "../config/config.js";
 
 export default function checkAdminEmail() {
-  console.log("um here in admin checker");
   return (req, res, next) => {
-    const { email } = req.body;
-    console.log(email);
     try {
+      const { email } = req.body;
       if (email === config.ADMIN_EMAIL) {
         req.isAdmin = true;
       } else {

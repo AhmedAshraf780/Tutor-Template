@@ -24,4 +24,8 @@ export const config = {
   ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,
 
   SESSION_KEY: process.env.SESSION_KEY,
+
+  CLOUD_NAME: process.env.CLOUD_NAME,
+  CLOUD_API_KEY: process.env.CLOUD_API_KEY,
+  CLOUD_API_SECRET: process.env.CLOUD_API_SECRET,
 };

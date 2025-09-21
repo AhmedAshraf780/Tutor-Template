@@ -81,7 +81,6 @@ export const authService = {
   },
   async signIn(email, password) {
     try {
-      alert("i am here")
       const res = await fetch(`${BASE_URL}/signin`, {
         method: "POST",
         headers: {
@@ -90,11 +89,9 @@ export const authService = {
         credentials: "include",
         body: JSON.stringify({ email, password }),
       });
-      alert("hyyyy")
       const data = await res.json();
       return data;
     } catch (err) {
-      alert("I got an err")
       return {
         success: false,
         message: `Something went Wrong , please try again later ${err}`,
@@ -152,22 +149,33 @@ export const authService = {
 
   async isLogged() {
     try {
-      const res = await fetch(`${BASE_URL}/students/me`, {
+      const res = await fetch(`${BASE_URL}/me`, {
         method: "GET",
         credentials: "include",
       });
 
       const data = await res.json();
-      if (data.logged) {
-        return {
-          logged: true,
-          user: data.user,
-        };
-      }
-      return { logged: false };
+      return data;
     } catch (err) {
       return {
         logged: false,
+        message: "Something went Wrong , please try again later",
+      };
+    }
+  },
+
+  async logout() {
+    try {
+      const res = await fetch(`${BASE_URL}/logout`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      const data = await res.json();
+      return data;
+    } catch (err) {
+      return {
+        success: false,
         message: "Something went Wrong , please try again later",
       };
     }

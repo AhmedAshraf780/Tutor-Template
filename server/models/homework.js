@@ -24,7 +24,16 @@ const homeworkSchema = new mongoose.Schema({
   homeWorkSolution: {
     type: String, // it will be url for firebase storing the pdf
   },
-  solutions: [String], // this will be the solutions of students to this homework
+  solutions: [
+    {
+      name: String, // this will be the name of the student
+      grade: Number,
+      phone: String,
+      submittedAt: Date,
+      studentId: String,
+      url: String,
+    },
+  ], // this will be the solutions of students to this homework
 });
 
 export default mongoose.models.Homework ||

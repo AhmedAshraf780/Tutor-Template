@@ -33,20 +33,6 @@ const adminSchema = new mongoose.Schema({
       default: [],
     },
   ],
-  homeworks: [
-    {
-      type: mongoose.SchemaTypes.ObjectId,
-      ref: "Homework",
-      default: [],
-    },
-  ],
-  exams: [
-    {
-      type: mongoose.SchemaTypes.ObjectId,
-      ref: "Exam",
-      default: [],
-    },
-  ],
 });
 
 export default mongoose.models.Admin || mongoose.model("Admin", adminSchema);

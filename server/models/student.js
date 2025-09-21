@@ -37,8 +37,14 @@ const studentSchema = new mongoose.Schema({
       ref: "Exam",
     },
   ],
-  notes: [String],
-  notfications: [String],
+  notes: [
+    {
+      title: String,
+      lesson: String,
+      description: String,
+      date: Date,
+    },
+  ],
 });
 
 export default mongoose.models.Student ||

@@ -39,4 +39,41 @@ export const studentServices = {
       };
     }
   },
+  async getNotes() {
+    try {
+      const res = await fetch(`${BASE_URL}/student/notes`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      const data = await res.json();
+      return data;
+    } catch (err) {
+      return {
+        success: false,
+        message: "Something went wrong,try again later",
+      };
+    }
+  },
+
+  async createNote(note) {
+    try {
+      const res = await fetch(`${BASE_URL}/student/notes`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(note),
+      });
+
+      const data = await res.json();
+      return data;
+    } catch (err) {
+      return {
+        success: false,
+        message: "Something went wrong,try again later",
+      };
+    }
+  },
 };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -32,6 +32,8 @@ import {
   Save,
 } from "lucide-react";
 import StudentNav from "./shared/nav";
+import { studentServices } from "@/services/studentServices";
+import { useToast } from "@/components/ui/toast";
 
 const NotesPage = () => {
   const [viewMode, setViewMode] = useState("grid");
@@ -44,21 +46,36 @@ const NotesPage = () => {
     description: "",
   });
 
-  const handleAddNote = () => {
+  const { showToast } = useToast();
+
+  useEffect(() => {
+    fetchNotes();
+  }, []);
+
+  const fetchNotes = async () => {
+    const res = await studentServices.getNotes();
+    if (res.success) setNotesData(res.notes);
+  };
+
+  const handleAddNote = async () => {
     if (newNote.title && newNote.lesson && newNote.description) {
       const note = {
-        id: Date.now(),
         title: newNote.title,
         lesson: newNote.lesson,
         description: newNote.description,
         date: new Date().toISOString().split("T")[0],
-        lastViewed: "Just now",
-        pages: 1,
-        tags: [],
-        color: "bg-blue-500",
-        progress: 0,
-        favorite: false,
       };
+
+      alert("sending request notes");
+      const res = await studentServices.createNote(note);
+      alert("got notes request");
+
+      if (res.success) {
+        showToast({
+          variant: "success",
+          title: "Note Created Successfully...",
+        });
+      }
       setNotesData([...notesData, note]);
       setNewNote({ title: "", lesson: "", description: "" });
       setIsPopoverOpen(false);
@@ -73,7 +90,7 @@ const NotesPage = () => {
     (note) =>
       note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       note.lesson.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      note.description.toLowerCase().includes(searchQuery.toLowerCase())
+      note.description.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const NoteCard = ({ note }) => (
@@ -83,22 +100,18 @@ const NotesPage = () => {
           <h3 className="font-bold text-lg text-white group-hover:text-blue-400 transition-colors mb-2 line-clamp-2">
             {note.title}
           </h3>
-          <p className="text-sm text-blue-400 font-medium mb-3 line-clamp-1">Lesson: {note.lesson}</p>
+          <p className="text-sm text-blue-400 font-medium mb-3 line-clamp-1">
+            Lesson: {note.lesson}
+          </p>
           <p className="text-slate-300 text-sm leading-relaxed break-words line-clamp-4">
             {note.description}
           </p>
         </div>
-        
+
         <div className="flex items-center justify-between pt-3 border-t border-slate-700/50 mt-auto">
           <div className="flex items-center gap-2 text-xs text-slate-400">
             <Calendar className="h-3 w-3" />
             <span>{new Date(note.date).toLocaleDateString()}</span>
-          </div>
-          <div className="flex gap-2">
-            <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-              <Eye className="h-3 w-3 mr-1" />
-              View
-            </Button>
           </div>
         </div>
       </div>
@@ -116,7 +129,9 @@ const NotesPage = () => {
             </h3>
           </div>
           <p className="text-sm text-blue-400 mb-2">Lesson: {note.lesson}</p>
-          <p className="text-xs text-slate-300 break-words line-clamp-2">{note.description}</p>
+          <p className="text-xs text-slate-300 break-words line-clamp-2">
+            {note.description}
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 text-xs text-slate-400">
@@ -176,7 +191,9 @@ const NotesPage = () => {
                         <input
                           type="text"
                           value={newNote.title}
-                          onChange={(e) => handleInputChange("title", e.target.value)}
+                          onChange={(e) =>
+                            handleInputChange("title", e.target.value)
+                          }
                           placeholder="Enter note title..."
                           className="w-full px-3 py-2 bg-slate-800 border border-slate-500 rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
                         />
@@ -188,7 +205,9 @@ const NotesPage = () => {
                         <input
                           type="text"
                           value={newNote.lesson}
-                          onChange={(e) => handleInputChange("lesson", e.target.value)}
+                          onChange={(e) =>
+                            handleInputChange("lesson", e.target.value)
+                          }
                           placeholder="Enter lesson name..."
                           className="w-full px-3 py-2 bg-slate-800 border border-slate-500 rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
                         />
@@ -199,7 +218,9 @@ const NotesPage = () => {
                         </label>
                         <textarea
                           value={newNote.description}
-                          onChange={(e) => handleInputChange("description", e.target.value)}
+                          onChange={(e) =>
+                            handleInputChange("description", e.target.value)
+                          }
                           placeholder="Enter note description..."
                           rows={3}
                           className="w-full px-3 py-2 bg-slate-800 border border-slate-500 rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors resize-none"
@@ -208,7 +229,11 @@ const NotesPage = () => {
                       <Button
                         onClick={handleAddNote}
                         className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
-                        disabled={!newNote.title || !newNote.lesson || !newNote.description}
+                        disabled={
+                          !newNote.title ||
+                          !newNote.lesson ||
+                          !newNote.description
+                        }
                       >
                         <Save className="h-4 w-4 mr-2" />
                         Create Note
@@ -263,7 +288,6 @@ const NotesPage = () => {
               </div>
             </div>
           </div>
-
 
           {/* Notes Display */}
           {viewMode === "grid" ? (

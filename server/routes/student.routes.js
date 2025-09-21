@@ -97,4 +97,48 @@ router.post(
   },
 );
 
+router.get("/notes", async (req, res) => {
+  try {
+    const student = await Student.findOne({ id: req.session.userId });
+
+    return res.status(200).json({
+      success: true,
+      notes: student.notes,
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      success: false,
+      message: "Server Internal Error",
+    });
+  }
+});
+
+router.post("/notes", async (req, res) => {
+  const { title, lesson, description, date } = req.body;
+  console.log(title, lesson, description);
+  try {
+    const student = await Student.findOne({ id: req.session.userId });
+
+    student.notes.push({
+      title,
+      lesson,
+      description,
+      date,
+    });
+
+    await student.save();
+    return res.status(200).json({
+      success: true,
+      message: "Note created successfully",
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      success: false,
+      message: "Server Internal Error",
+    });
+  }
+});
+
 export default router;

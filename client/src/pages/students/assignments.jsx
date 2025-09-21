@@ -34,14 +34,17 @@ const AssignmentsPage = () => {
   });
 
   const AssignmentCard = ({ assignment }) => {
-    const [studentSubmissionUrl, setStudentSubmissionUrl] = useState();
-
     const fileInputRef = useRef(null);
+
+    // ✅ Check if current student already submitted
+    const mySolution = assignment.solutions?.find(
+      (sol) => sol.studentId === id,
+    );
+
     const handleUpload = async (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      // preparing the payload
-      alert(id);
+
       const payload = {
         type: "homework",
         assignmentId: assignment.id,
@@ -51,9 +54,10 @@ const AssignmentsPage = () => {
 
       const res = await studentServices.submitSolution(payload);
 
-      // TODO: replace with real API upload call
-      const fileUrl = URL.createObjectURL(file);
-      setStudentSubmissionUrl(fileUrl);
+      if (res.success) {
+        // refresh list after submit
+        fetchAssignments();
+      }
     };
 
     return (
@@ -83,18 +87,26 @@ const AssignmentsPage = () => {
                 <Eye className="h-4 w-4 mr-2" /> View Homework
               </Button>
 
-              {/* Submit Solution */}
-              <Button
-                size="sm"
-                className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:opacity-70"
-                disabled={!!studentSubmissionUrl}
-                onClick={() =>
-                  !studentSubmissionUrl && fileInputRef.current.click()
-                }
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                {studentSubmissionUrl ? "Submitted" : "Submit Solution"}
-              </Button>
+              {/* Submit Solution or Already Submitted */}
+              {mySolution ? (
+                <Button
+                  size="sm"
+                  className="w-full bg-green-700 cursor-not-allowed"
+                  disabled
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Submitted
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  onClick={() => fileInputRef.current.click()}
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Submit Solution
+                </Button>
+              )}
 
               <input
                 ref={fileInputRef}
@@ -103,6 +115,7 @@ const AssignmentsPage = () => {
                 className="hidden"
                 onChange={handleUpload}
               />
+
               {/* Official Solution (from backend) */}
               {assignment.homeWorkSolution && (
                 <Button
@@ -141,11 +154,11 @@ const AssignmentsPage = () => {
           )}
 
           {/* Student Submission Preview */}
-          {activeTab === "homeworks" && studentSubmissionUrl && (
+          {activeTab === "homeworks" && mySolution && (
             <div className="mt-4 pt-4 border-t border-slate-700/50 text-sm text-slate-300">
               ✅ Your solution has been submitted.{" "}
               <a
-                href={studentSubmissionUrl}
+                href={mySolution.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-400 underline hover:text-blue-300"

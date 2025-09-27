@@ -10,6 +10,31 @@ const upload = multer({ dest: "uploads/" });
 
 const router = express.Router();
 
+router.get("/", async (req, res) => {
+  try {
+    const student = await Student.findOne({ id: req.session.userId });
+    if (!student) {
+      return res.status(400).json({
+        success: false,
+        message: "Student not Existed",
+      });
+    }
+
+    console.log(student.inGroup);
+    return res.status(200).json({
+      success: true,
+      inGroup: student.inGroup,
+      student,
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      success: false,
+      message: "Server Internal Error",
+    });
+  }
+});
+
 router.get("/assignments", async (req, res) => {
   try {
     // get this student by its id not _id

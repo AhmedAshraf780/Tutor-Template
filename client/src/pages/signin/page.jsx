@@ -38,9 +38,8 @@ export default function Signin() {
           variant: "success",
         });
 
-
         if (res.user.isAdmin) {
-          navigate("/dashboard");
+          navigate("/dashboard/myGroups");
         } else {
           navigate(`/students/${res.user.id}`);
         }

@@ -4,7 +4,7 @@ import { Menu, X, Calculator, BookOpen } from "lucide-react";
 import { admin } from "@/constants/admin";
 import { useNavigate } from "react-router-dom";
 
-export default function Navbar() {
+export default function Navbar({logged}) {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
 

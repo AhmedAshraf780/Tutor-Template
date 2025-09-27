@@ -174,10 +174,10 @@ router.post("/auth/resendOTP", async (req, res) => {
  * -------------------------------------------------------------------------------------------------------
  * /
  *
- 
+
 /*-------------------------------------------------------------------------------------------------------
- *                                            Sign in with forgotpassword 
- * 
+ *                                            Sign in with forgotpassword
+ *
  *-------------------------------------------------------------------------------------------------------
  **/
 
@@ -228,6 +228,7 @@ router.post("/signin", checkAdminEmail(), async (req, res) => {
       }
 
       req.session.userId = user.id;
+      req.session.isInGroup = user.inGroup;
       req.session.isAdmin = req.isAdmin || false;
       req.session.createdAt = Date.now();
 
@@ -392,6 +393,7 @@ router.get("/me", checkExpiration(), authMiddleWare(), async (req, res) => {
         id: user.id,
         email: user.email,
         name: user.name,
+        inGroup: user.inGroup,
         isAdmin,
       },
     });

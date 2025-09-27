@@ -25,6 +25,8 @@ import { ToastProvider } from "./components/ui/toast";
 import Assignmentspane from "./pages/admin/assignmentspane";
 import LabPane from "./pages/admin/labPane";
 import AssignementCard from "./pages/admin/assignementCard";
+import ProtectedStudentRoute from "./components/protectedStudentRoute";
+import NotFoundPage from "./components/notFound";
 
 function App() {
   const location = useLocation();
@@ -115,17 +117,29 @@ function App() {
           }
         />
         {/* Student Routes */}
-        {/* {logged && <Route path="/students" element={<StudentPage />} />} */}
-        {logged && <Route path="/students/:id/notes" element={<NotesPage />} />}
+        {logged && (
+          <Route
+            path="/students/:id/notes"
+            element={
+              <ProtectedStudentRoute logged={logged} isInGroup={userData?.inGroup} userId={userData?.id}>
+                <NotesPage />
+              </ProtectedStudentRoute>
+            }
+          />
+        )}
         {logged && (
           <Route
             path="/students/:id/assignments"
-            element={<AssignmentsPage />}
+            element={
+              <ProtectedStudentRoute logged={logged} isInGroup={userData?.inGroup} userId={userData?.id}>
+                <AssignmentsPage />
+              </ProtectedStudentRoute>
+            }
           />
         )}
         {logged && <Route path="/students/:id" element={<StudentPage />} />}
         {/* Not found */}
-        <Route path="*" element={<h1>Not Found</h1>} />
+        <Route path="*" element={<NotFoundPage/>} />
       </Routes>
     </ToastProvider>
   );

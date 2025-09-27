@@ -7,14 +7,19 @@ import { RedisStore } from "connect-redis";
 import rateLimit from "express-rate-limit";
 
 /*
- *    Custom modules
+ *    Custom module
  * */
+
 import { config } from "./config/config.js";
 import authRoutes from "./routes/auth.routes.js";
 import studentRoutes from "./routes/student.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import connectMongo from "./utils/connectDB.js";
 import { connectRedis, getRedisClient } from "./utils/connectRedis.js";
+
+const app = express();
+
+
 
 /*
  *     Connecting databases
@@ -29,8 +34,6 @@ const loginRate = rateLimit({
     message: "Too many login attempts, try again later",
   },
 });
-
-const app = express();
 
 app.use(
   session({

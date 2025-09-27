@@ -23,7 +23,7 @@ const studentSchema = new mongoose.Schema({
   grade: Number,
   address: String,
 
-  inGroup: Boolean,
+  inGroup: { type: Boolean, default: false },
 
   homeworks: [
     {

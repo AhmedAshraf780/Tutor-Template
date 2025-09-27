@@ -9,7 +9,8 @@ import multer from "multer";
  * */
 
 import Homework from "../models/homework.js";
-import Exam from "../models/exam.js";
+import Exam from '../models/exam.js'
+
 import authMiddleWare from "../middleware/auth.middleware.js";
 import Student from "../models/student.js";
 import Admin from "../models/admin.js";
@@ -74,9 +75,9 @@ router.get(
         });
       }
       const students = await Student.find({}).select("-password");
-      console.log(students);
+      console.log("fromDB", students);
       await redisClient.set("adminStudents", JSON.stringify(students), {
-        EX: 60 * 60 * 3,
+        EX: 60 * 3,
       });
       return res.status(200).json({
         success: true,
@@ -250,7 +251,6 @@ router.delete("/mygroups/:groupId", async (req, res) => {
 
 router.patch("/mygroups", async (req, res) => {
   const { groupId, students } = req.body;
-  console.log("i got patch request", groupId);
 
   try {
     const validStudents = await Student.find({ id: { $in: students } }).select(
@@ -258,7 +258,20 @@ router.patch("/mygroups", async (req, res) => {
     );
     const studentIds = validStudents.map((s) => s._id);
 
-    const group = await Group.findOneAndUpdate(
+    // update the group students attributes (inGroup)
+    const group = await Group.findOne({ id: groupId });
+
+    const allStudentsId = group.students;
+    await Student.updateMany(
+      { _id: { $in: studentIds } },
+      { $set: { inGroup: true } },
+    );
+    await Student.updateMany(
+      { _id: { $in: allStudentsId, $nin: studentIds } },
+      { $set: { inGroup: false } },
+    );
+
+    const updatedGroup = await Group.updateOne(
       { id: groupId },
       { students: studentIds },
       { new: true },
@@ -284,7 +297,7 @@ router.patch("/mygroups", async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Group updated successfully",
-      group,
+      updatedGroup,
     });
   } catch (err) {
     console.error("Error updating group:", err);

@@ -1,5 +1,21 @@
 const BASE_URL = "http://localhost:3001";
 export const studentServices = {
+  async inGroup() {
+    try {
+      const res = await fetch(`${BASE_URL}/student/`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      const data = await res.json();
+      return data;
+    } catch (err) {
+      return {
+        success: false,
+        message: "Something went wrong,try again later",
+      };
+    }
+  },
   async getAssignements() {
     try {
       const res = await fetch(`${BASE_URL}/student/assignments`, {

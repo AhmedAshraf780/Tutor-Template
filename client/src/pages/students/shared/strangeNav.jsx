@@ -13,13 +13,14 @@ import {
   Menu,
   X,
   Calculator,
+  LucidePhoneCall,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { admin } from "@/constants/admin";
 import { authService } from "@/services/auth";
 import { useToast } from "@/components/ui/toast";
 
-const StudentNav = ({ initialTab }) => {
+const StrangeNav = ({ initialTab }) => {
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(initialTab);
   const { id } = useParams();
@@ -47,24 +48,14 @@ const StudentNav = ({ initialTab }) => {
 
   const navItems = [
     {
-      id: "notes",
-      label: "Notes",
-      icon: BookOpen,
+      id: "contactus",
+      label: "contact us",
+      icon: LucidePhoneCall,
       onClick: () => {
-        setActiveTab("notes");
-        navigate(`/students/${id}/notes`);
+        setActiveTab("contactus");
+        navigate(`/students/${id}/`);
       },
       gradient: "from-emerald-500 to-teal-500",
-    },
-    {
-      id: "assignments",
-      label: "Assignments",
-      icon: ClipboardList,
-      onClick: () => {
-        setActiveTab("assignments");
-        navigate(`/students/${id}/assignments`);
-      },
-      gradient: "from-purple-500 to-pink-500",
     },
   ];
 
@@ -212,4 +203,4 @@ const StudentNav = ({ initialTab }) => {
   );
 };
 
-export default StudentNav;
+export default StrangeNav;

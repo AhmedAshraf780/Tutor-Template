@@ -28,17 +28,13 @@ const Userpane = () => {
         setError(null);
 
         const res = await adminServices.getStudents();
-        console.log("Fetched students:", res); // Debug log
 
         if (isMounted && Array.isArray(res)) {
           setUsers(res);
-          console.log("Students set to state:", res); // Debug log
         } else if (isMounted) {
-          console.log("Response is not an array:", res); // Debug log
           setError("Invalid data format received");
         }
       } catch (e) {
-        console.error("Failed to fetch students:", e);
         if (isMounted) {
           setError("Failed to load students.");
         }
@@ -67,7 +63,6 @@ const Userpane = () => {
   });
 
   // Debug log to see current state
-  console.log("Current state:", { users, loading, error, filteredUsers });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white relative overflow-hidden">

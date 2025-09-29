@@ -63,7 +63,11 @@ const GroupPane = () => {
       const res = await adminServices.getStudents();
       setStudents(Array.isArray(res) ? res : []);
     } catch (error) {
-      console.error("Failed to fetch students:", error);
+      showToast({
+        title: "Failed to fetch students",
+        description: "Please try again later.",
+        variant: "error",
+      });
     }
   };
 
@@ -142,7 +146,6 @@ const GroupPane = () => {
         duration: 4000,
       });
     } catch (e) {
-      console.error("Failed to create group:", e);
       showToast({
         variant: "error",
         title: "Failed to Create Group",
@@ -185,7 +188,6 @@ const GroupPane = () => {
         duration: 4000,
       });
     } catch (e) {
-      console.error("Failed to delete group:", e);
       showToast({
         variant: "error",
         title: "Failed to Delete Group",
@@ -241,7 +243,6 @@ const GroupPane = () => {
         duration: 4000,
       });
     } catch (e) {
-      console.error("Failed to update group:", e);
       showToast({
         variant: "error",
         title: "Failed to Update Group",

@@ -27,7 +27,6 @@ const Assignmentspane = () => {
       pdfAssignment,
       pdfSolution,
     };
-    console.log("Assignment submitted:", payload);
     const res = await adminServices.createAssignment(payload);
     if (res.success) {
       showToast({

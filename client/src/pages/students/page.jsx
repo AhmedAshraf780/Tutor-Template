@@ -7,6 +7,7 @@ const StudentPage = () => {
   const [inGroup, setInGroup] = useState(null); // null = unknown yet
   const navigate = useNavigate();
   const { id } = useParams();
+  const { showToast } = useToast();
 
   useEffect(() => {
     const checkGroup = async () => {
@@ -14,7 +15,7 @@ const StudentPage = () => {
         const res = await studentServices.inGroup(id); // pass id if needed
         setInGroup(res.inGroup);
       } catch (err) {
-        console.error("Failed to check group:", err);
+        showToast.error(err.message);
       }
     };
     checkGroup();
@@ -57,9 +58,15 @@ const StudentPage = () => {
           </h1>
           <p className="text-slate-300 text-lg leading-relaxed mb-8">
             You are currently{" "}
-            <span className="text-blue-400 font-semibold">not yet a student</span>{" "}
-            of <span className="text-purple-400 font-semibold">Mr. Amr Ashraf</span>.
-            Join a thriving community of learners, challenge yourself, and take the next step toward academic excellence.
+            <span className="text-blue-400 font-semibold">
+              not yet a student
+            </span>{" "}
+            of{" "}
+            <span className="text-purple-400 font-semibold">
+              Mr. Amr Ashraf
+            </span>
+            . Join a thriving community of learners, challenge yourself, and
+            take the next step toward academic excellence.
           </p>
           <a
             href="/contact"
@@ -74,4 +81,3 @@ const StudentPage = () => {
 };
 
 export default StudentPage;
-

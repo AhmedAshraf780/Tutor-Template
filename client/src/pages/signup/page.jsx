@@ -54,7 +54,6 @@ export default function Signup() {
     try {
       // simulate submit
       await new Promise((r) => setTimeout(r, 200));
-      console.log("Signup values:", values);
 
       reset();
 

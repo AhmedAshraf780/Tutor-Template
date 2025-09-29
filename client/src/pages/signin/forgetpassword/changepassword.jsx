@@ -64,7 +64,6 @@ export default function ResetPassword() {
   // The onSubmit function now handles the password reset logic
   async function onSubmit(values) {
     await new Promise((r) => setTimeout(r, 200));
-    console.log("Resetting password for:", values.password);
     try {
       const res = await authService.resetPassword(values.password, sessionId);
       if (res.success) {

@@ -12,7 +12,6 @@ export const adminServices = {
       }
 
       const data = await res.json();
-      console.log("Service response:", data); // Debug log
 
       if (data.success) {
         return data.students;
@@ -20,7 +19,6 @@ export const adminServices = {
         throw new Error(data.message || "Failed to fetch students");
       }
     } catch (err) {
-      console.error("Service error:", err);
       throw err; // Re-throw so component can handle it
     }
   },
@@ -42,7 +40,6 @@ export const adminServices = {
         throw new Error(data.message || "Failed to fetch groups");
       }
     } catch (err) {
-      console.error("Get groups error:", err);
       throw err; // Re-throw so component can handle it
     }
   },
@@ -70,7 +67,6 @@ export const adminServices = {
         throw new Error(data.message || "Failed to create group");
       }
     } catch (err) {
-      console.error("Create group error:", err);
       throw err; // Re-throw so component can handle it
     }
   },
@@ -87,7 +83,6 @@ export const adminServices = {
       }
 
       const data = await res.json();
-      console.log("Delete response:", data); // Debug log
 
       if (data.success) {
         return data;
@@ -95,7 +90,6 @@ export const adminServices = {
         throw new Error(data.message || "Failed to delete group");
       }
     } catch (err) {
-      console.error("Delete group error:", err);
       throw err; // Re-throw so component can handle it
     }
   },
@@ -115,7 +109,6 @@ export const adminServices = {
       }
 
       const data = await res.json();
-      console.log("Update group response:", data); // Debug log
 
       if (data.success) {
         return data;
@@ -123,7 +116,6 @@ export const adminServices = {
         throw new Error(data.message || "Failed to update group");
       }
     } catch (err) {
-      console.error("Update group error:", err);
       throw err; // Re-throw so component can handle it
     }
   },
@@ -152,7 +144,6 @@ export const adminServices = {
       }
 
       const data = await res.json();
-      console.log("Update group response:", data); // Debug log
 
       if (data.success) {
         return data;
@@ -160,7 +151,6 @@ export const adminServices = {
         throw new Error(data.message || "Failed to update group");
       }
     } catch (err) {
-      console.error("Update group error:", err);
       throw err; // Re-throw so component can handle it
     }
   },
@@ -177,7 +167,6 @@ export const adminServices = {
       }
 
       const data = await res.json();
-      console.log("Update group response:", data); // Debug log
 
       if (data.success) {
         return data;
@@ -185,7 +174,6 @@ export const adminServices = {
         throw new Error(data.message || "Failed to update group");
       }
     } catch (err) {
-      console.error("Update group error:", err);
       throw err; // Re-throw so component can handle it
     }
   },
@@ -205,7 +193,6 @@ export const adminServices = {
       }
 
       const data = await res.json();
-      console.log("Get solutions response:", data); // Debug log
 
       if (data.success) {
         return data;
@@ -213,7 +200,6 @@ export const adminServices = {
         throw new Error(data.message || "Failed to fetch solutions");
       }
     } catch (err) {
-      console.error("Get solutions error:", err);
       throw err; // Re-throw so component can handle it
     }
   },

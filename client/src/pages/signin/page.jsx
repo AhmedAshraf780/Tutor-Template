@@ -28,7 +28,6 @@ export default function Signin() {
 
   async function onSubmit(values) {
     await new Promise((r) => setTimeout(r, 200));
-    console.log("Signin values:", values);
     try {
       const res = await authService.signIn(values.email, values.password);
       if (res.success) {
@@ -50,7 +49,6 @@ export default function Signin() {
         });
       }
     } catch (err) {
-      console.log(err);
       showToast({
         title: `Failed To Sign in ${err}`,
         variant: "error",

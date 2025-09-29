@@ -32,7 +32,6 @@ export const authService = {
       const data = await res.json();
       return data;
     } catch (err) {
-      console.log(err);
       return {
         success: false,
         message: "Something went Wrong , please try again later",
@@ -52,7 +51,6 @@ export const authService = {
       const data = await res.json();
       return data;
     } catch (err) {
-      console.log(err);
       return {
         success: false,
         message: "Something went Wrong , please try again later",
@@ -72,7 +70,6 @@ export const authService = {
       const data = await res.json();
       return data;
     } catch (err) {
-      console.log(err);
       return {
         success: false,
         message: "Something went Wrong , please try again later",

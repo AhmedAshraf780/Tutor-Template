@@ -1,41 +1,8 @@
-import { useEffect, useState } from "react";
+import { useToast } from "@/components/ui/toast";
 import StrangeNav from "./shared/strangeNav";
-import { studentServices } from "@/services/studentServices";
-import { useNavigate, useParams } from "react-router-dom";
 
 const StudentPage = () => {
-  const [inGroup, setInGroup] = useState(null); // null = unknown yet
-  const navigate = useNavigate();
-  const { id } = useParams();
   const { showToast } = useToast();
-
-  useEffect(() => {
-    const checkGroup = async () => {
-      try {
-        const res = await studentServices.inGroup(id); // pass id if needed
-        setInGroup(res.inGroup);
-      } catch (err) {
-        showToast.error(err.message);
-      }
-    };
-    checkGroup();
-  }, [id]);
-
-  // Redirect only once we know inGroup === true
-  useEffect(() => {
-    if (inGroup === true) {
-      navigate(`/students/${id}/assignments`);
-    }
-  }, [inGroup, navigate, id]);
-
-  if (inGroup === null) {
-    // optional: loading state
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
-        Checking your student status...
-      </div>
-    );
-  }
 
   // Show hero page only if not in group
   return (

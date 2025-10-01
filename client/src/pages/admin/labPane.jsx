@@ -4,9 +4,11 @@ import { adminServices } from "@/services/adminServices";
 import { Card, CardContent } from "@/components/ui/card";
 import { BookOpen, FileText, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useGroups } from "@/hooks/useGroups";
 
 const LabPane = () => {
-  const [groups, setGroups] = useState([]);
+  // const [groups, setGroups] = useState([]);
+  const { data: groups = [] } = useGroups();
   const [selectedGroup, setSelectedGroup] = useState("");
   const [homeworks, setHomeworks] = useState([]);
   const [exams, setExams] = useState([]);
@@ -14,14 +16,6 @@ const LabPane = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchGroups();
-  }, []);
-
-  const fetchGroups = async () => {
-    const res = await adminServices.getMyGroups();
-    setGroups(res);
-  };
 
   const fetchAssignments = async (groupId) => {
     const res = await adminServices.getAllAssignmentsForGroup(groupId);
@@ -32,10 +26,10 @@ const LabPane = () => {
   const filteredAssignments =
     activeTab === "homeworks"
       ? homeworks.filter((a) =>
-          a.name.toLowerCase().includes(searchQuery.toLowerCase())
+          a.name.toLowerCase().includes(searchQuery.toLowerCase()),
         )
       : exams.filter((a) =>
-          a.name.toLowerCase().includes(searchQuery.toLowerCase())
+          a.name.toLowerCase().includes(searchQuery.toLowerCase()),
         );
 
   return (
@@ -114,7 +108,7 @@ const LabPane = () => {
                       navigate(
                         `/dashboard/assignmentpage/?assignmentId=${
                           a._id
-                        }&type=${activeTab.slice(0, -1)}`
+                        }&type=${activeTab.slice(0, -1)}`,
                       )
                     }
                     className="bg-white/5 border border-slate-700 rounded-2xl cursor-pointer hover:scale-105 transition-all duration-200"

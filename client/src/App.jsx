@@ -1,11 +1,5 @@
-import { useState, useEffect, useLayoutEffect } from "react";
-import {
-  Routes,
-  Route,
-  useLocation,
-  Navigate,
-  useNavigate,
-} from "react-router-dom";
+import { useEffect } from "react";
+import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import ProtectedRoute from "./components/protectedRoute";
 import Navbar from "./components/navbar.jsx";
 import HomePage from "./components/HomePage.jsx";
@@ -14,11 +8,9 @@ import Signin from "./pages/signin/page.jsx";
 import OtpVerify from "./pages/signup/otp.jsx";
 import VerifyEmail from "./pages/signin/forgetpassword/verifyEmail.jsx";
 import ResetPassword from "./pages/signin/forgetpassword/changepassword.jsx";
-import Dashboard from "./pages/admin/dashboard.jsx";
 import StudentPage from "./pages/students/page.jsx";
 import NotesPage from "./pages/students/notes.jsx";
 import AssignmentsPage from "./pages/students/assignments.jsx";
-import { authService } from "./services/auth.js";
 import Userpane from "./pages/admin/userspane";
 import GroupPane from "./pages/admin/grouppane";
 import { ToastProvider } from "./components/ui/toast";
@@ -27,39 +19,52 @@ import LabPane from "./pages/admin/labPane";
 import AssignementCard from "./pages/admin/assignementCard";
 import ProtectedStudentRoute from "./components/protectedStudentRoute";
 import NotFoundPage from "./components/notFound";
+import { useWhoAmI } from "./hooks/whoAmI";
 
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
+
   const navRoutes = ["/", "/signin", "/signup", "/auth/verifyotp"];
   const showNav = navRoutes.includes(location.pathname);
 
-  const [logged, setLogged] = useState(null); // null = loading
-  const [userData, setUserData] = useState(null);
+  const { data: userData, isLoading, isError } = useWhoAmI();
 
-  useLayoutEffect(() => {
-    (async () => {
-      const res = await authService.isLogged();
-      if (res.success) {
-        setUserData(res.user);
-        setLogged(true);
-        // Navigate based on user role after auth check
-        if (res.user?.isAdmin && navRoutes.includes(location.pathname)) {
-          navigate("/dashboard/mygroups", { replace: true });
-        } else if (
-          !res.user?.isAdmin &&
-          navRoutes.includes(location.pathname)
-        ) {
-          navigate(`/students/${userData.id}`, { replace: true });
-        }
+  // Determine if the user is logged in
+  const logged = userData?.logged; // true if userData exists, false if null
+
+  // Redirect based on user role and auth status
+  useEffect(() => {
+    console.log("userData",userData);
+    console.log("logged",logged);
+    if (isLoading) return; // wait for query to finish
+
+    if (logged && navRoutes.includes(location.pathname)) {
+      if (userData?.user?.isAdmin) {
+        navigate("/dashboard/mygroups", { replace: true });
       } else {
-        setLogged(false);
+        navigate(`/students/${userData?.user?.id}`, { replace: true });
       }
-    })();
-  }, [navigate]);
+    }
+  }, [logged, userData, location.pathname, navigate, isLoading]);
 
-  // Show loading state while checking auth
-  if (logged === null) return <div>Loading...</div>;
+  // Loading state while checking auth
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
+
+  // Optional: handle error state
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-red-500">
+        Error fetching user data
+      </div>
+    );
+  }
 
   return (
     <ToastProvider>
@@ -75,11 +80,12 @@ function App() {
           path="/auth/restorepassword/:sessionId"
           element={<ResetPassword />}
         />
-        {/* Protected routes */}
+
+        {/* Admin Protected routes */}
         <Route
           path="/dashboard/users"
           element={
-            <ProtectedRoute logged={logged} isAdmin={userData?.isAdmin}>
+            <ProtectedRoute logged={logged} isAdmin={userData?.user?.isAdmin}>
               <Userpane />
             </ProtectedRoute>
           }
@@ -87,7 +93,7 @@ function App() {
         <Route
           path="/dashboard/mygroups"
           element={
-            <ProtectedRoute logged={logged} isAdmin={userData?.isAdmin}>
+            <ProtectedRoute logged={logged} isAdmin={userData?.user?.isAdmin}>
               <GroupPane />
             </ProtectedRoute>
           }
@@ -95,7 +101,7 @@ function App() {
         <Route
           path="/dashboard/assignments"
           element={
-            <ProtectedRoute logged={logged} isAdmin={userData?.isAdmin}>
+            <ProtectedRoute logged={logged} isAdmin={userData?.user?.isAdmin}>
               <Assignmentspane />
             </ProtectedRoute>
           }
@@ -103,7 +109,7 @@ function App() {
         <Route
           path="/dashboard/assignmentpage"
           element={
-            <ProtectedRoute logged={logged} isAdmin={userData?.isAdmin}>
+            <ProtectedRoute logged={logged} isAdmin={userData?.user?.isAdmin}>
               <AssignementCard />
             </ProtectedRoute>
           }
@@ -111,35 +117,52 @@ function App() {
         <Route
           path="/dashboard/lab"
           element={
-            <ProtectedRoute logged={logged} isAdmin={userData?.isAdmin}>
+            <ProtectedRoute logged={logged} isAdmin={userData?.user?.isAdmin}>
               <LabPane />
             </ProtectedRoute>
           }
         />
-        {/* Student Routes */}
-        {logged && (
-          <Route
-            path="/students/:id/notes"
-            element={
-              <ProtectedStudentRoute logged={logged} isInGroup={userData?.inGroup} userId={userData?.id}>
-                <NotesPage />
-              </ProtectedStudentRoute>
-            }
-          />
-        )}
-        {logged && (
-          <Route
-            path="/students/:id/assignments"
-            element={
-              <ProtectedStudentRoute logged={logged} isInGroup={userData?.inGroup} userId={userData?.id}>
-                <AssignmentsPage />
-              </ProtectedStudentRoute>
-            }
-          />
-        )}
-        {logged && <Route path="/students/:id" element={<StudentPage />} />}
+
+        {/* Student Protected routes */}
+        <Route
+          path="/students/:id"
+          element={
+            <ProtectedStudentRoute
+              logged={logged}
+              isInGroup={userData?.user?.inGroup}
+              userId={userData?.user?.id}
+            >
+              <StudentPage />
+            </ProtectedStudentRoute>
+          }
+        />
+        <Route
+          path="/students/:id/notes"
+          element={
+            <ProtectedStudentRoute
+              logged={logged}
+              isInGroup={userData?.user?.inGroup}
+              userId={userData?.user?.id}
+            >
+              <NotesPage />
+            </ProtectedStudentRoute>
+          }
+        />
+        <Route
+          path="/students/:id/assignments"
+          element={
+            <ProtectedStudentRoute
+              logged={logged}
+              isInGroup={userData?.user?.inGroup}
+              userId={userData?.user?.id}
+            >
+              <AssignmentsPage />
+            </ProtectedStudentRoute>
+          }
+        />
+
         {/* Not found */}
-        <Route path="*" element={<NotFoundPage/>} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </ToastProvider>
   );

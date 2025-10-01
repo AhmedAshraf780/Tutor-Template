@@ -34,12 +34,15 @@ import {
 import StudentNav from "./shared/nav";
 import { studentServices } from "@/services/studentServices";
 import { useToast } from "@/components/ui/toast";
+import { useNotes } from "@/hooks/useNotes";
 
 const NotesPage = () => {
   const [viewMode, setViewMode] = useState("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-  const [notesData, setNotesData] = useState([]);
+  const { data,refetch: refetchNotes } = useNotes();
+  const notesData = data.notes || [];
+  console.log("notesData", notesData);
   const [newNote, setNewNote] = useState({
     title: "",
     lesson: "",
@@ -47,15 +50,6 @@ const NotesPage = () => {
   });
 
   const { showToast } = useToast();
-
-  useEffect(() => {
-    fetchNotes();
-  }, []);
-
-  const fetchNotes = async () => {
-    const res = await studentServices.getNotes();
-    if (res.success) setNotesData(res.notes);
-  };
 
   const handleAddNote = async () => {
     if (newNote.title && newNote.lesson && newNote.description) {
@@ -66,9 +60,7 @@ const NotesPage = () => {
         date: new Date().toISOString().split("T")[0],
       };
 
-      alert("sending request notes");
       const res = await studentServices.createNote(note);
-      alert("got notes request");
 
       if (res.success) {
         showToast({
@@ -76,7 +68,8 @@ const NotesPage = () => {
           title: "Note Created Successfully...",
         });
       }
-      setNotesData([...notesData, note]);
+
+      refetchNotes();
       setNewNote({ title: "", lesson: "", description: "" });
       setIsPopoverOpen(false);
     }

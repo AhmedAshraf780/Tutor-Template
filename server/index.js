@@ -16,10 +16,10 @@ import studentRoutes from "./routes/student.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import connectMongo from "./utils/connectDB.js";
 import { connectRedis, getRedisClient } from "./utils/connectRedis.js";
+import authMiddleWare from "./middleware/auth.middleware.js";
+import checkExpiration from "./middleware/checkExpiration.js";
 
 const app = express();
-
-
 
 /*
  *     Connecting databases
@@ -47,7 +47,7 @@ app.use(
       // sameSite: "lax",
       maxAge: 8 * 60 * 60 * 1000,
     },
-  })
+  }),
 );
 
 app.use(express.json());
@@ -59,12 +59,12 @@ app.use(
   cors({
     origin: "http://localhost:5173", // your frontend
     credentials: true, // allow cookies to be sent
-  })
+  }),
 );
 
 app.use("/", authRoutes);
-app.use("/student", studentRoutes);
-app.use("/admin", adminRoutes);
+app.use("/student", authMiddleWare(), checkExpiration(), studentRoutes);
+app.use("/admin", authMiddleWare(), checkExpiration(), adminRoutes);
 
 app.listen(config.PORT, async () => {
   console.log(`listening on port ${config.PORT}`); // Fixed typo in "listenning"

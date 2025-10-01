@@ -6,24 +6,23 @@ import {
   Edit,
   Users,
   Filter,
-  MoreVertical,
   Mail,
   Sparkles,
   GraduationCap,
   Plus,
   AlertTriangle,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import AdminNav from "./shared/nav";
 import { adminServices } from "@/services/adminServices";
 import { useToast } from "@/components/ui/toast";
+import { useGroups } from "@/hooks/useGroups";
+import { useStudents } from "@/hooks/studentHook";
 
 const GroupPane = () => {
-  const [groups, setGroups] = useState([]);
-  const [students, setStudents] = useState([]); // all students in system
+  const { data: groups = [], isLoading, isError, error, refetch: refetchGroups } = useGroups();
+  const { data: students = [] } = useStudents();
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
@@ -35,47 +34,14 @@ const GroupPane = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [groupToDelete, setGroupToDelete] = useState(null);
 
-  // Search state for group modals
   const [modalSearchTerm, setModalSearchTerm] = useState("");
 
   const { showToast } = useToast();
-
-  useEffect(() => {
-    fetchGroups();
-    fetchStudents();
-  }, []);
-
-  const fetchGroups = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const res = await adminServices.getMyGroups();
-      setGroups(Array.isArray(res) ? res : []);
-    } catch {
-      setError("Failed to load groups.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchStudents = async () => {
-    try {
-      const res = await adminServices.getStudents();
-      setStudents(Array.isArray(res) ? res : []);
-    } catch (error) {
-      showToast({
-        title: "Failed to fetch students",
-        description: "Please try again later.",
-        variant: "error",
-      });
-    }
-  };
 
   // Get students who are not already in any group
   const getAvailableStudents = () => {
     const studentsInGroups = new Set();
 
-    // Collect all student IDs that are already in groups
     groups.forEach((group) => {
       if (group.students && Array.isArray(group.students)) {
         group.students.forEach((student) => {
@@ -84,7 +50,6 @@ const GroupPane = () => {
       }
     });
 
-    // Filter out students who are already in groups
     return students.filter((student) => !studentsInGroups.has(student.id));
   };
 
@@ -92,7 +57,6 @@ const GroupPane = () => {
   const getAvailableStudentsForEdit = (currentGroupId) => {
     const studentsInOtherGroups = new Set();
 
-    // Collect all student IDs that are in OTHER groups (not the current one being edited)
     groups.forEach((group) => {
       const groupId = group._id || group.id;
       if (
@@ -106,9 +70,6 @@ const GroupPane = () => {
       }
     });
 
-    // Return students who are either:
-    // 1. Not in any group (available to add)
-    // 2. Currently in the group being edited (can be removed)
     return students.filter((student) => !studentsInOtherGroups.has(student.id));
   };
 
@@ -126,30 +87,51 @@ const GroupPane = () => {
     });
   };
 
-  const handleOpenAddGroup = async () => {
-    // await fetchStudents();
-    setModalSearchTerm(""); // Reset search when opening
+  const handleOpenAddGroup = () => {
+    setModalSearchTerm("");
+    setNewGroupName("");
+    setSelectedStudents([]);
     setShowAddModal(true);
   };
 
   const handleCreateGroup = async () => {
+    if (!newGroupName.trim()) {
+      showToast({
+        variant: "error",
+        title: "Group Name Required",
+        description: "Please enter a name for the group.",
+        duration: 4000,
+      });
+      return;
+    }
+
+    if (selectedStudents.length === 0) {
+      showToast({
+        variant: "error",
+        title: "No Students Selected",
+        description: "Please select at least one student for the group.",
+        duration: 4000,
+      });
+      return;
+    }
+
     try {
       await adminServices.createGroup(newGroupName, selectedStudents);
       setShowAddModal(false);
       setNewGroupName("");
       setSelectedStudents([]);
-      fetchGroups();
+      await refetchGroups();
       showToast({
         variant: "success",
         title: "Group Created Successfully! 🎉",
-        description: `"${newGroupName}" has been created with ${selectedStudents.length} students.`,
+        description: `"${newGroupName}" has been created with ${selectedStudents.length} student${selectedStudents.length !== 1 ? "s" : ""}.`,
         duration: 4000,
       });
     } catch (e) {
       showToast({
         variant: "error",
         title: "Failed to Create Group",
-        description: "There was an error creating the group. Please try again.",
+        description: e?.message || "There was an error creating the group. Please try again.",
         duration: 4000,
       });
     }
@@ -170,15 +152,14 @@ const GroupPane = () => {
     if (!groupToDelete) return;
 
     try {
-      // Use the MongoDB _id field (which is the primary identifier)
-      const groupId = groupToDelete._id;
+      const groupId = groupToDelete._id || groupToDelete.id;
 
       if (!groupId) {
         throw new Error("No valid group ID found in the group object");
       }
 
       await adminServices.deleteGroup(groupId);
-      fetchGroups();
+      await refetchGroups();
       setShowDeleteModal(false);
       setGroupToDelete(null);
       showToast({
@@ -192,25 +173,28 @@ const GroupPane = () => {
         variant: "error",
         title: "Failed to Delete Group",
         description:
-          e.message ||
+          e?.message ||
           "There was an error deleting the group. Please try again.",
         duration: 4000,
       });
     }
   };
 
-  const handleOpenEditGroup = async (group) => {
-    // await fetchStudents();
+  const handleOpenEditGroup = (group) => {
     setEditingGroup(group);
-    // Start with all current group members selected
-    setSelectedStudents(group.students.map((s) => s.id));
-    setModalSearchTerm(""); // Reset search when opening
+    setSelectedStudents(group.students?.map((s) => s.id) || []);
+    setModalSearchTerm("");
     setShowEditModal(true);
   };
 
   const handleUpdateGroup = async () => {
     try {
-      const groupId = editingGroup.id;
+      const groupId = editingGroup._id || editingGroup.id;
+
+      if (!groupId) {
+        throw new Error("No valid group ID found");
+      }
+
       const originalCount = editingGroup.students?.length || 0;
       const newCount = selectedStudents.length;
 
@@ -218,20 +202,15 @@ const GroupPane = () => {
       setShowEditModal(false);
       setEditingGroup(null);
       setSelectedStudents([]);
-      fetchGroups();
+      await refetchGroups();
 
-      // Create a more descriptive message
       let changeMessage = "";
       if (newCount > originalCount) {
         const added = newCount - originalCount;
-        changeMessage = `Added ${added} student${
-          added > 1 ? "s" : ""
-        } to the group.`;
+        changeMessage = `Added ${added} student${added > 1 ? "s" : ""} to the group.`;
       } else if (newCount < originalCount) {
         const removed = originalCount - newCount;
-        changeMessage = `Removed ${removed} student${
-          removed > 1 ? "s" : ""
-        } from the group.`;
+        changeMessage = `Removed ${removed} student${removed > 1 ? "s" : ""} from the group.`;
       } else {
         changeMessage = "Group membership updated.";
       }
@@ -239,14 +218,14 @@ const GroupPane = () => {
       showToast({
         variant: "success",
         title: "Group Updated Successfully! ✨",
-        description: `"${editingGroup.name}" now has ${newCount} students. ${changeMessage}`,
+        description: `"${editingGroup.name}" now has ${newCount} student${newCount !== 1 ? "s" : ""}. ${changeMessage}`,
         duration: 4000,
       });
     } catch (e) {
       showToast({
         variant: "error",
         title: "Failed to Update Group",
-        description: "There was an error updating the group. Please try again.",
+        description: e?.message || "There was an error updating the group. Please try again.",
         duration: 4000,
       });
     }
@@ -383,7 +362,7 @@ const GroupPane = () => {
         </div>
 
         {/* Loading State */}
-        {loading && (
+        {isLoading && (
           <div className="flex flex-col items-center justify-center py-20 space-y-4">
             <div className="w-16 h-16 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
             <p className="text-slate-400 text-lg">Loading groups...</p>
@@ -391,17 +370,17 @@ const GroupPane = () => {
         )}
 
         {/* Error State */}
-        {error && !loading && (
+        {isError && !isLoading && (
           <div className="flex flex-col items-center justify-center py-20 space-y-4">
             <div className="w-16 h-16 bg-red-500/20 rounded-2xl flex items-center justify-center">
               <span className="text-red-400 text-2xl">⚠️</span>
             </div>
-            <p className="text-red-400 text-lg">{error}</p>
+            <p className="text-red-400 text-lg">{error?.message || "Failed to load groups"}</p>
           </div>
         )}
 
         {/* Empty State */}
-        {!loading && !error && groups.length === 0 && (
+        {!isLoading && !isError && groups.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 space-y-6">
             <div className="w-24 h-24 bg-slate-800/50 rounded-3xl flex items-center justify-center">
               <Users className="w-12 h-12 text-slate-400" />
@@ -426,92 +405,95 @@ const GroupPane = () => {
         )}
 
         {/* Group Cards */}
-        {!loading && !error && filteredGroups.length > 0 && (
+        {!isLoading && !isError && filteredGroups.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filteredGroups.map((group, index) => (
-              <div
-                key={group.id}
-                className="group bg-slate-800/40 backdrop-blur-sm rounded-3xl border border-slate-700/50 p-6 hover:bg-slate-800/60 hover:border-slate-600/50 transition-all duration-500 hover:shadow-2xl hover:shadow-purple-500/10 hover:-translate-y-2"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                {/* Card Header */}
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex items-center gap-4">
-                    <div className="relative">
-                      <div className="w-16 h-16 bg-gradient-to-br from-purple-500 via-cyan-500 to-blue-500 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-purple-500/25">
-                        {group.name ? group.name[0].toUpperCase() : "G"}
+            {filteredGroups.map((group, index) => {
+              const groupId = group._id || group.id;
+              return (
+                <div
+                  key={groupId}
+                  className="group bg-slate-800/40 backdrop-blur-sm rounded-3xl border border-slate-700/50 p-6 hover:bg-slate-800/60 hover:border-slate-600/50 transition-all duration-500 hover:shadow-2xl hover:shadow-purple-500/10 hover:-translate-y-2"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  {/* Card Header */}
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        <div className="w-16 h-16 bg-gradient-to-br from-purple-500 via-cyan-500 to-blue-500 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-purple-500/25">
+                          {group.name ? group.name[0].toUpperCase() : "G"}
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-slate-800 flex items-center justify-center">
+                          <div className="w-2 h-2 bg-white rounded-full"></div>
+                        </div>
                       </div>
-                      <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-slate-800 flex items-center justify-center">
-                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                      <div>
+                        <h3 className="text-xl font-bold text-white group-hover:text-purple-400 transition-colors">
+                          {group.name}
+                        </h3>
+                        <p className="text-slate-400 flex items-center gap-2 mt-1">
+                          <Users className="w-4 h-4" />
+                          {group.students?.length ?? 0} students
+                        </p>
                       </div>
                     </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-white group-hover:text-purple-400 transition-colors">
-                        {group.name}
-                      </h3>
-                      <p className="text-slate-400 flex items-center gap-2 mt-1">
-                        <Users className="w-4 h-4" />
-                        {group.students?.length ?? 0} students
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => handleOpenEditGroup(group)}
-                      className="p-2 hover:bg-slate-700/50 rounded-xl transition-colors"
-                    >
-                      <Edit className="w-4 h-4 text-slate-400 hover:text-white" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteGroup(group)}
-                      className="p-2 hover:bg-red-500/20 rounded-xl transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4 text-red-400 hover:text-red-300" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Students List */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-medium text-slate-300">
-                      Students
-                    </h4>
-                    <span className="text-xs text-slate-500">
-                      {group.students?.length ?? 0} members
-                    </span>
-                  </div>
-
-                  <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-thin scrollbar-track-slate-800/30 scrollbar-thumb-slate-600/50 hover:scrollbar-thumb-slate-500/70 scrollbar-thumb-rounded-full">
-                    {(group.students ?? []).map((student) => (
-                      <div
-                        key={student.id}
-                        className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-700/30 transition-colors"
+                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => handleOpenEditGroup(group)}
+                        className="p-2 hover:bg-slate-700/50 rounded-xl transition-colors"
                       >
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-md">
-                          {student.name ? student.name[0].toUpperCase() : "?"}
+                        <Edit className="w-4 h-4 text-slate-400 hover:text-white" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteGroup(group)}
+                        className="p-2 hover:bg-red-500/20 rounded-xl transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-400 hover:text-red-300" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Students List */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-medium text-slate-300">
+                        Students
+                      </h4>
+                      <span className="text-xs text-slate-500">
+                        {group.students?.length ?? 0} members
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-thin scrollbar-track-slate-800/30 scrollbar-thumb-slate-600/50 hover:scrollbar-thumb-slate-500/70 scrollbar-thumb-rounded-full">
+                      {(group.students ?? []).map((student) => (
+                        <div
+                          key={student.id}
+                          className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-700/30 transition-colors"
+                        >
+                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-md">
+                            {student.name ? student.name[0].toUpperCase() : "?"}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-white truncate">
+                              {student.name}
+                            </p>
+                            <p className="text-xs text-slate-400 flex items-center gap-1 truncate">
+                              <Mail className="w-3 h-3" />
+                              {student.email}
+                            </p>
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-white truncate">
-                            {student.name}
-                          </p>
-                          <p className="text-xs text-slate-400 flex items-center gap-1 truncate">
-                            <Mail className="w-3 h-3" />
-                            {student.email}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
         {/* No Results State */}
-        {!loading &&
-          !error &&
+        {!isLoading &&
+          !isError &&
           groups.length > 0 &&
           filteredGroups.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 space-y-6">
@@ -534,7 +516,12 @@ const GroupPane = () => {
       {showAddModal && (
         <GroupModal
           title="Create New Group"
-          onClose={() => setShowAddModal(false)}
+          onClose={() => {
+            setShowAddModal(false);
+            setNewGroupName("");
+            setSelectedStudents([]);
+            setModalSearchTerm("");
+          }}
           onConfirm={handleCreateGroup}
           groupName={newGroupName}
           setGroupName={setNewGroupName}
@@ -550,12 +537,17 @@ const GroupPane = () => {
       {showEditModal && editingGroup && (
         <GroupModal
           title={`Edit Group: ${editingGroup.name}`}
-          onClose={() => setShowEditModal(false)}
+          onClose={() => {
+            setShowEditModal(false);
+            setEditingGroup(null);
+            setSelectedStudents([]);
+            setModalSearchTerm("");
+          }}
           onConfirm={handleUpdateGroup}
           groupName={editingGroup.name}
-          setGroupName={() => {}} // locked name
+          setGroupName={null}
           students={getFilteredStudentsForModal(
-            getAvailableStudentsForEdit(editingGroup._id),
+            getAvailableStudentsForEdit(editingGroup._id || editingGroup.id),
           )}
           selectedStudents={selectedStudents}
           toggleStudentSelection={toggleStudentSelection}
@@ -569,7 +561,6 @@ const GroupPane = () => {
       {showDeleteModal && groupToDelete && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-slate-900/95 backdrop-blur-xl rounded-3xl border border-red-500/30 p-8 w-full max-w-md shadow-2xl shadow-red-500/10 animate-in fade-in-0 zoom-in-95 duration-300">
-            {/* Header */}
             <div className="flex items-center gap-4 mb-6">
               <div className="w-12 h-12 bg-red-500/20 rounded-2xl flex items-center justify-center">
                 <AlertTriangle className="w-6 h-6 text-red-400" />
@@ -582,7 +573,6 @@ const GroupPane = () => {
               </div>
             </div>
 
-            {/* Content */}
             <div className="mb-8">
               <p className="text-slate-300 mb-4">
                 Are you sure you want to delete the group{" "}
@@ -606,7 +596,6 @@ const GroupPane = () => {
               </div>
             </div>
 
-            {/* Actions */}
             <div className="flex justify-end gap-4">
               <button
                 onClick={() => {
@@ -630,6 +619,7 @@ const GroupPane = () => {
     </div>
   );
 };
+
 
 const GroupModal = ({
   title,

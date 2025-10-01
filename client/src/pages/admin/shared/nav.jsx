@@ -12,9 +12,11 @@ import { useNavigate } from "react-router-dom";
 import { admin } from "@/constants/admin";
 import { authService } from "@/services/auth";
 import { useToast } from "@/components/ui/toast";
+import { QueryClient } from "@tanstack/react-query";
 
 const AdminNav = ({ initialTab }) => {
   const [open, setOpen] = useState(false);
+  const queryClient = new QueryClient();
   const [activeTab, setActiveTab] = useState(initialTab);
   const { showToast } = useToast();
 
@@ -23,13 +25,19 @@ const AdminNav = ({ initialTab }) => {
   const handleLogout = async () => {
     const res = await authService.logout();
     if (res.success) {
+      // queryClient.setQueryData(["user"], { logged: false, user: null });
+      queryClient.removeQueries(["user"]);
       showToast({
         title: "Logging out successfully..",
         variant: "success",
       });
 
       setOpen(false); // close mobile menu if open
-      return navigate("/signin");
+
+      navigate("/signin");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } else {
       showToast({
         title: "Failed to logout",
@@ -142,6 +150,14 @@ const AdminNav = ({ initialTab }) => {
                   </button>
                 );
               })}
+              {/* Logout Button (desktop) */}
+              <button
+                onClick={handleLogout}
+                className="ml-4 flex items-center gap-3 px-5 py-3 rounded-2xl font-medium transition-all duration-300 bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white shadow-lg shadow-red-500/25"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>Logout</span>
+              </button>
             </div>
 
             {/* Mobile menu button */}

@@ -9,60 +9,20 @@ import {
   GraduationCap,
   Sparkles,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import AdminNav from "./shared/nav";
-import { adminServices } from "@/services/adminServices";
+import { useStudents } from "@/hooks/studentHook";
 
 const Userpane = () => {
-  const [users, setUsers] = useState([]); // always an array
+  const { data: users = [], isLoading, isError, error } = useStudents();
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchStudents = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const res = await adminServices.getStudents();
-
-        if (isMounted && Array.isArray(res)) {
-          setUsers(res);
-        } else if (isMounted) {
-          setError("Invalid data format received");
-        }
-      } catch (e) {
-        if (isMounted) {
-          setError("Failed to load students.");
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchStudents();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   const term = searchTerm.toLowerCase();
-  const safeUsers = Array.isArray(users) ? users : [];
-
-  // Filter by name/email (defensive: coerce to strings)
-  const filteredUsers = safeUsers.filter((user) => {
-    const name = (user?.name ?? "").toString().toLowerCase();
-    const email = (user?.email ?? "").toString().toLowerCase();
+  const filteredUsers = users.filter((user) => {
+    const name = (user?.name ?? "").toLowerCase();
+    const email = (user?.email ?? "").toLowerCase();
     return name.includes(term) || email.includes(term);
   });
-
-  // Debug log to see current state
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white relative overflow-hidden">
@@ -126,7 +86,7 @@ const Userpane = () => {
                   Total Students
                 </p>
                 <p className="text-3xl font-bold text-white mt-1">
-                  {safeUsers.length}
+                  {users.length}
                 </p>
               </div>
               <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
@@ -169,7 +129,7 @@ const Userpane = () => {
         </div>
 
         {/* Loading State */}
-        {loading && (
+        {isLoading && (
           <div className="flex flex-col items-center justify-center py-20 space-y-4">
             <div className="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
             <p className="text-slate-400 text-lg">Loading students...</p>
@@ -177,18 +137,20 @@ const Userpane = () => {
         )}
 
         {/* Error State */}
-        {error && !loading && (
+        {isError && !isLoading && (
           <div className="flex flex-col items-center justify-center py-20 space-y-4">
             <div className="w-16 h-16 bg-red-500/20 rounded-2xl flex items-center justify-center">
               <span className="text-red-400 text-2xl">⚠️</span>
             </div>
-            <p className="text-red-400 text-lg">{error}</p>
+            <p className="text-red-400 text-lg">
+              {error?.message || "Failed to load students"}
+            </p>
           </div>
         )}
 
         {/* Student Cards */}
-        {!loading &&
-          !error &&
+        {!isLoading &&
+          !isError &&
           (filteredUsers.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {filteredUsers.map((user, index) => {
@@ -318,3 +280,4 @@ const Userpane = () => {
 };
 
 export default Userpane;
+

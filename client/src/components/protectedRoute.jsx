@@ -6,7 +6,7 @@ function ProtectedRoute({ logged, isAdmin, children }) {
     return <Navigate to="/signin" replace />;
   }
   if (isAdmin && location.pathname.startsWith("/students")) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/dashboard/mygroups" replace />;
   }
 
   return children;

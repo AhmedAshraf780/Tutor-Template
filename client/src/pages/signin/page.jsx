@@ -10,6 +10,7 @@ import { authService } from "@/services/auth";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { QueryClient } from "@tanstack/react-query";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -19,6 +20,8 @@ const schema = z.object({
 export default function Signin() {
   const { showToast } = useToast();
   const navigate = useNavigate();
+
+  const queryClient = new QueryClient();
   const {
     register,
     handleSubmit,
@@ -31,6 +34,8 @@ export default function Signin() {
     try {
       const res = await authService.signIn(values.email, values.password);
       if (res.success) {
+        // queryClient.setQueryData(["user"], { logged: true, user: res.user });
+        queryClient.invalidateQueries(["user"]);
         showToast({
           title: "Signed in",
           description: res.message,
@@ -38,9 +43,15 @@ export default function Signin() {
         });
 
         if (res.user.isAdmin) {
-          navigate("/dashboard/myGroups");
+          setTimeout(() => {
+            window.location.reload();
+            navigate("/dashboard/mygroups");
+          }, 1500);
         } else {
-          navigate(`/students/${res.user.id}`);
+          setTimeout(() => {
+            window.location.reload();
+            navigate(`/students/${res.user.id}/assignments`);
+          }, 1500);
         }
       } else {
         showToast({

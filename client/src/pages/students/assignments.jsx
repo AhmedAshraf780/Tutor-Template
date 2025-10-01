@@ -4,26 +4,21 @@ import { ClipboardList, Search, Eye, CheckCircle, Target } from "lucide-react";
 import StudentNav from "./shared/nav";
 import { studentServices } from "@/services/studentServices";
 import { useParams } from "react-router-dom";
+import { useAssignments } from "@/hooks/useAssignments";
 
 const AssignmentsPage = () => {
   const [activeTab, setActiveTab] = useState("homeworks");
   const [searchQuery, setSearchQuery] = useState("");
-  const [homeworksData, setHomeworksData] = useState([]);
-  const [examsData, setExamsData] = useState([]);
 
   const { id } = useParams();
-
-  useEffect(() => {
-    fetchAssignments();
-  }, []);
-
-  const fetchAssignments = async () => {
-    const res = await studentServices.getAssignements();
-    if (res.success) {
-      setHomeworksData(res.homeworks);
-      setExamsData(res.exams);
-    }
-  };
+  const {
+    data: assignments,
+    isLoading: isExamsLoading,
+    isError: isExamsError,
+    refetch: refetchAssignments,
+  } = useAssignments(id);
+  const examsData = assignments?.exams || [];
+  const homeworksData = assignments?.homeworks || [];
 
   const currentData = activeTab === "homeworks" ? homeworksData : examsData;
   const filteredAssignments = currentData.filter((assignment) => {
@@ -55,8 +50,7 @@ const AssignmentsPage = () => {
       const res = await studentServices.submitSolution(payload);
 
       if (res.success) {
-        // refresh list after submit
-        fetchAssignments();
+        refetchAssignments();
       }
     };
 

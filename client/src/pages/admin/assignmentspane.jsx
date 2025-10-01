@@ -2,21 +2,19 @@ import { useEffect, useState } from "react";
 import AdminNav from "./shared/nav";
 import { adminServices } from "@/services/adminServices";
 import { useToast } from "@/components/ui/toast";
+import { useGroups } from "@/hooks/useGroups";
 
 const Assignmentspane = () => {
   const [name, setName] = useState("");
   const [type, setType] = useState("");
   const [groupId, setGroupId] = useState("");
-  const [groups, setGroups] = useState([]);
+  // const [groups, setGroups] = useState([]);
+  const { data: groups = [] } = useGroups();
   const [googleForm, setGoogleForm] = useState("");
   const [pdfAssignment, setPdfAssignment] = useState(null);
   const [pdfSolution, setPdfSolution] = useState(null);
 
   const { showToast } = useToast();
-
-  useEffect(() => {
-    fetchGroups();
-  }, []);
 
   const handleSubmit = async () => {
     const payload = {
@@ -35,11 +33,6 @@ const Assignmentspane = () => {
         variant: "success",
       });
     }
-  };
-
-  const fetchGroups = async () => {
-    const res = await adminServices.getMyGroups();
-    setGroups(res);
   };
 
   return (

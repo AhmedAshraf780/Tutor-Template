@@ -18,6 +18,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { admin } from "@/constants/admin";
 import { authService } from "@/services/auth";
 import { useToast } from "@/components/ui/toast";
+import { QueryClient } from "@tanstack/react-query";
 
 const StudentNav = ({ initialTab }) => {
   const [open, setOpen] = useState(false);
@@ -27,16 +28,21 @@ const StudentNav = ({ initialTab }) => {
   const { showToast } = useToast();
 
   const navigate = useNavigate();
+  const queryClient = new QueryClient();
   const handleLogout = async () => {
     const res = await authService.logout();
     if (res.success) {
+      queryClient.removeQueries(["user","notes","assignments"]);
       showToast({
         title: "Logging out successfully..",
         variant: "success",
       });
 
       setOpen(false); // close mobile menu if open
-      return navigate("/signin");
+      setTimeout(() => {
+        window.location.reload();
+        navigate("/signin");
+      }, 1500);
     } else {
       showToast({
         title: "Failed to logout",

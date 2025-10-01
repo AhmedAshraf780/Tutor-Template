@@ -9,7 +9,7 @@ import multer from "multer";
  * */
 
 import Homework from "../models/homework.js";
-import Exam from '../models/exam.js'
+import Exam from "../models/exam.js";
 
 import authMiddleWare from "../middleware/auth.middleware.js";
 import Student from "../models/student.js";
@@ -58,60 +58,26 @@ router.get("/admin/me", async (req, res) => {
   }
 });
 
-router.get(
-  "/students",
-  checkExpiration(),
-  authMiddleWare(),
-  async (req, res) => {
-    try {
-      // check if students stored in redis
-      const cached = await redisClient.get("adminStudents");
-      if (cached) {
-        const students = JSON.parse(cached);
-        console.log("From cached", students);
-        return res.status(200).json({
-          success: true,
-          students,
-        });
-      }
-      const students = await Student.find({}).select("-password");
-      console.log("fromDB", students);
-      await redisClient.set("adminStudents", JSON.stringify(students), {
-        EX: 60 * 3,
-      });
-      return res.status(200).json({
-        success: true,
-        students,
-      });
-    } catch (err) {
-      console.log(err);
-      return res.status(500).json({
-        success: false,
-        message: "Server Internal Error",
-      });
-    }
-  },
-);
+router.get("/students", async (req, res) => {
+  try {
+    const students = await Student.find({}).select("-password");
+    return res.status(200).json({
+      success: true,
+      students,
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      success: false,
+      message: "Server Internal Error",
+    });
+  }
+});
 router.get("/mygroups", async (req, res) => {
   try {
-    console.log("i got mygroups request");
-    const cached = await redisClient.get("myGroups");
-    if (cached) {
-      const adminGroups = JSON.parse(cached);
-      return res.status(200).json({
-        success: true,
-        adminGroups,
-      });
-    }
-    const adminCached = await redisClient.get("admin");
-    let admin;
-    if (adminCached) {
-      admin = JSON.parse(adminCached);
-    } else {
-      admin = await Admin.findOne({ email: config.ADMIN_EMAIL }).select(
-        "myGroups",
-      );
-    }
+    const admin = await Admin.findOne({ email: config.ADMIN_EMAIL }).select(
+      "myGroups",
+    );
 
     if (!admin) {
       return res.status(401).json({
@@ -124,12 +90,6 @@ router.get("/mygroups", async (req, res) => {
     const adminGroups = await Group.find({ _id: { $in: groupIds } }).populate(
       "students",
     );
-    // cache myGroups
-    await redisClient.set("myGroups", JSON.stringify(adminGroups), {
-      EX: 60 * 60 * 3,
-    });
-    // cache admin himself
-    await redisClient.set("admin", JSON.stringify(admin));
 
     return res.status(200).json({
       success: true,
@@ -186,16 +146,7 @@ router.post("/mygroups", async (req, res) => {
     admin.myGroups.push(group._id);
     await admin.save();
 
-    const updatedGroups = await Group.find({
-      _id: { $in: admin.myGroups },
-    }).populate("students");
-
     const populatedGroup = await Group.findById(group._id).populate("students");
-
-    await redisClient.set("admin", JSON.stringify(admin), { EX: 60 * 60 * 3 });
-    await redisClient.set("myGroups", JSON.stringify(updatedGroups), {
-      EX: 60 * 60 * 3,
-    });
 
     return res.status(201).json({
       success: true,
@@ -213,8 +164,6 @@ router.post("/mygroups", async (req, res) => {
 
 router.delete("/mygroups/:groupId", async (req, res) => {
   const { groupId } = req.params;
-  console.log("i got delete request");
-  console.log(groupId);
   try {
     const admin = await Admin.findOne({ email: config.ADMIN_EMAIL });
     if (!admin) {
@@ -233,10 +182,6 @@ router.delete("/mygroups/:groupId", async (req, res) => {
     const updatedGroups = await Group.find({
       _id: { $in: admin.myGroups },
     }).populate("students");
-    await redisClient.set("myGroups", JSON.stringify(updatedGroups), {
-      EX: 60 * 60 * 3,
-    });
-    await redisClient.set("admin", JSON.stringify(admin), { EX: 60 * 60 * 3 });
 
     return res
       .status(200)
@@ -289,10 +234,6 @@ router.patch("/mygroups", async (req, res) => {
     const adminGroups = await Group.find({
       _id: { $in: admin.myGroups },
     }).populate("students");
-
-    await redisClient.set("myGroups", JSON.stringify(adminGroups), {
-      EX: 60 * 60 * 3,
-    });
 
     return res.status(200).json({
       success: true,
@@ -401,12 +342,6 @@ router.post(
         else if (type === "exam") student.exams.push(assignment._id);
         await student.save();
       }
-
-      // update redis
-      const updatedGroups = await Group.find({}).populate("students homeworks");
-      await redisClient.set("myGroups", JSON.stringify(updatedGroups), {
-        EX: 60 * 60 * 3,
-      });
 
       return res.status(200).json({
         success: true,
